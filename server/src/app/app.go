@@ -18,6 +18,10 @@ import (
 	"github.com/openmultiplayer/web/server/src/api/servers"
 	"github.com/openmultiplayer/web/server/src/auth"
 	"github.com/openmultiplayer/web/server/src/db"
+	"github.com/openmultiplayer/web/server/src/mailer"
+	"github.com/openmultiplayer/web/server/src/mailreg"
+	"github.com/openmultiplayer/web/server/src/mailworker"
+	"github.com/openmultiplayer/web/server/src/pubsub"
 	"github.com/openmultiplayer/web/server/src/queryer"
 	"github.com/openmultiplayer/web/server/src/scraper"
 	"github.com/openmultiplayer/web/server/src/seed"
@@ -29,8 +33,8 @@ import (
 // Config represents environment variable configuration parameters
 type Config struct {
 	ListenAddr string `default:"0.0.0.0:8080" split_words:"true"`
-	HashKey    []byte
-	BlockKey   []byte
+	HashKey    []byte `required:"true" split_words:"true"`
+	BlockKey   []byte `required:"true" split_words:"true"`
 }
 
 // App stores root application state
@@ -58,6 +62,9 @@ func Initialise(root context.Context) (app *App, err error) {
 		return nil, errors.Wrap(err, "failed to connect to prisma")
 	}
 
+	ps := pubsub.NewEmbedded()
+	mailreg.Init("emails") // assume the binary is exected from the repo root
+	mailworker.Init("system.email", ps, &mailer.Mock{})
 	auther := auth.New(app.prisma, app.config.HashKey, app.config.BlockKey)
 
 	storage := serverdb.NewPrisma(app.prisma)
@@ -132,6 +139,12 @@ func (app *App) Start() error {
 		if err := app.worker.RunWithSeed(time.Second*30, seed.Addresses); err != nil {
 			zap.L().Error("failed to upsert new data",
 				zap.Error(err))
+		}
+	}()
+
+	go func() {
+		if err := mailworker.Run(); err != nil {
+			zap.L().Fatal("mailworker stopped unexpectedly", zap.Error(err))
 		}
 	}()
 
