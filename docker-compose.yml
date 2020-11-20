@@ -63,6 +63,13 @@ services:
       traefik.http.routers.omp_index_minio.entrypoints: https
       traefik.http.routers.omp_index_minio.tls.certresolver: default
 
+  rabbit:
+    image: rabbitmq
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+
   pgadmin:
     image: dpage/pgadmin4
     restart: always

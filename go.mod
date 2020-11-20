@@ -16,6 +16,7 @@ require (
 	github.com/prisma/prisma-client-go v0.0.10-0.20201008164449-6ec144dd5855
 	github.com/sendgrid/rest v2.6.2+incompatible // indirect
 	github.com/sendgrid/sendgrid-go v3.7.1+incompatible
+	github.com/streadway/amqp v1.0.0
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
